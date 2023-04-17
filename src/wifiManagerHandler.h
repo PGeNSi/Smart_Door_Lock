@@ -5,6 +5,7 @@
 #include <sysConfig.h>
 
 void wifiInit(){
+    Serial.println("--> Initializing WiFi");
     WiFiManager wm;
     if (digitalRead(WIFI_RESET_BUTTON_PIN) == LOW) {
         Serial.println("Reset WiFi");
@@ -12,11 +13,11 @@ void wifiInit(){
     }
     bool res = wm.autoConnect(WIFI_MANAGER_SSID, WIFI_MANAGER_PASSWD);
     if (!res) {
-        Serial.println("Failed to connect");
+        Serial.println("---->WiFi Connected");
         ESP.restart();
     }
     else {
-        Serial.println("WiFi Connected");
+        Serial.println("---->WiFi Connected");
     }
 }
 

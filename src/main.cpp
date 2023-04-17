@@ -19,6 +19,7 @@
 TaskHandle_t taskHandle[8];
 
 void setup(){
+    Serial.println("> Initializing All System...");
     pinMode(WIFI_RESET_BUTTON_PIN, INPUT_PULLUP);
     pinMode(INTERNAL_DOOR_UNLOCK_BUTTON_PIN, INPUT_PULLUP);
     Serial.begin(115200);
@@ -34,8 +35,10 @@ void setup(){
     keypadMessageQueueMutexInit();
     rfidMessageQueueInit();
     relayInit();
+    Serial.println("> All System Initialized");
 
-    // Initiate All Task
+    // Initialize All Task
+    Serial.println("> Creating Tasks");
     xTaskCreate(rtcAutoCalibrationTask, "rtcTask", TASK_RTC_STACK_DEPTH, NULL, TASK_RTC_PRIORITY, &taskHandle[0]);
     xTaskCreate(lcdTask, "lcdTask", TASK_LCD_STACK_DEPTH, NULL, TASK_LCD_PRIORITY, &taskHandle[1]);
     xTaskCreate(keypadTask, "keypadTask", TASK_KEYPAD_STACK_DEPTH, NULL, TASK_KEYPAD_PRIORITY, &taskHandle[2]);
@@ -44,6 +47,7 @@ void setup(){
     xTaskCreate(modeAdminTask, "modeAdminTask", TASK_MODEADMIN_STACK_DEPTH, NULL, TASK_MODEADMIN_PRIORITY, &taskHandle[5]);
     xTaskCreate(relayTask, "relayTask", TASK_RELAY_STACK_DEPTH, NULL, TASK_RELAY_PRIORITY, &taskHandle[6]);
     xTaskCreate(adminModeTriggeringSystemTask, "AMTSTask", TASK_ADMINMODETRIGGERER_STACK_DEPTH, NULL, TASK_ADMINMODETRIGGERER_PRIORITY, &taskHandle[7]);
+    Serial.println("> Tasks Created");
 
     // Initialize Interrupt
     attachInterrupt(digitalPinToInterrupt(INTERNAL_DOOR_UNLOCK_BUTTON_PIN),buttonUnlockedISR,CHANGE);

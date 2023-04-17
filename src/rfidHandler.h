@@ -16,7 +16,13 @@ MFRC522 rfid(RFID_SS_SDA_PIN, RFID_RST_PIN);
 MFRC522::MIFARE_Key key;
 
 void rfidMessageQueueInit(){
+    Serial.println("--> Initializing RFID Message Queue Object");
     rfidMessageQueue = xQueueCreate(2, sizeof( struct rfidMessage ));
+    if(rfidMessageQueue == NULL){
+        Serial.println("ERR--> Failed to Initialize RFID Message Queue Object");
+        ESP.restart();
+    }
+    Serial.println("--> RFID Message Queue Object Initialized");
 }
 
 void rfidTask( void * pvParameters ){

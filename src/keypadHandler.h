@@ -37,8 +37,18 @@ char keypadInput[16] = "";
 int keypadCurrentIndex = 0;
 
 void keypadMessageQueueMutexInit(){
+    Serial.println("--> Initializing Keypad Message Queue and Mutex Object");
     keypadMessageQueue = xQueueCreate(5, sizeof( struct keypadMessage ));
     keypadMessageMutex = xSemaphoreCreateMutex();
+    if(keypadMessageQueue == NULL){
+        Serial.println("ERR--> Failed to Initialize Keypad Message Queue Object");
+        ESP.restart();  
+    }
+    if(keypadMessageMutex == NULL){
+        Serial.println("ERR--> Failed to Initialize Keypad Message Mutex Object");
+        ESP.restart();
+    }
+    Serial.println("--> Keypad Message Queue and Mutex Object Initialized");
 }
 
 void resetKeypadQueue(){

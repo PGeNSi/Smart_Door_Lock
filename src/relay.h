@@ -13,8 +13,14 @@ int currentRelayTick = 0;
 bool relayIsOn = false;
 
 void relayInit(){
+    Serial.println("--> Initializing Relay pin and Queue Object");
     pinMode(RELAY_PIN, OUTPUT);
     relayQueue = xQueueCreate(10, sizeof(bool));
+    if(relayQueue == NULL){
+        Serial.println("ERR--> Failed to Initialize Relay Queue Object");
+        ESP.restart();
+    }
+    Serial.println("--> Relay pin and Queue Object Initialized");
 }
 
 void relayTask( void * pvParameters ){
