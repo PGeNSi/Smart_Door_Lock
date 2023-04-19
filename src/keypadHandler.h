@@ -36,9 +36,6 @@ byte colPins[COLS] = {4, 5, 6, 7}; // Keypad Column Map
 
 Keypad_I2C keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS, KEYPAD_I2C_ADDR, PCF8574 );
 
-char keypadInput[16] = "";
-int keypadCurrentIndex = 0;
-
 void keypadMessageQueueAndKeypadClearQueueInit(){
     Serial.println("--> Initializing Keypad Message Queue and Keypad Clear Queue Object");
     keypadMessageQueue = xQueueCreate(KEYPAD_MESSAGE_QUEUE_LENGTH, sizeof( struct keypadMessage ));
@@ -72,15 +69,20 @@ void keypadTask( void * pvParameters ){
     keypad.begin( makeKeymap(keys) );
     xSemaphoreGive(twoWireMutex);
     bool queueResult;
+    char keypadInput[16] = "";
+    int keypadCurrentIndex = 0;
     for (;;){
+        if( xQueueReceive( keypadClearQueue, &( queueResult ), ( TickType_t ) KEYPAD_CLEAR_QUEUE_WAIT_TICK ) == pdPASS ){
+            xQueueReset(keypadMessageQueue);
+            // String("").toCharArray(keypadInput,16);
+            for(int kpindx = 0; kpindx < 16; kpindx++){
+                keypadInput[kpindx] = 0;
+            }
+            keypadCurrentIndex = 0;
+        }
         if(!keypadReadEnable) {
             vTaskDelay(pdMS_TO_TICKS(KEYPAD_WAIT_FOR_ENABLE_MS));
             continue;
-        }
-        if( xQueueReceive( keypadClearQueue, &( queueResult ), ( TickType_t ) KEYPAD_CLEAR_QUEUE_WAIT_TICK ) == pdPASS ){
-            xQueueReset(keypadMessageQueue);
-            String("").toCharArray(keypadInput,16);
-            keypadCurrentIndex = 0;
         }
         while(!(xSemaphoreTake( twoWireMutex, pdMS_TO_TICKS(KEYPAD_TWOWIRES_MUTEX_WAIT_LOOP_MS) ) == pdTRUE)){}
         char key = keypad.getKey(); 
