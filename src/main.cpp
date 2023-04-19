@@ -27,10 +27,10 @@ void setup(){
     SPI.begin(); 
     fileSystemInit();
     wifiInit();
+    twoWireMutexInit();
+    modeTakeOverMutexInit();
     rtcInit();
     buzzerInit();
-    modeTakeOverMutexInit();
-    twoWireMutexInit();
     lcdQueueInit();
     keypadMessageQueueMutexInit();
     rfidMessageQueueInit();
