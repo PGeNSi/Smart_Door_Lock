@@ -112,8 +112,11 @@ void keypadTask( void * pvParameters ){
                 keypadMesg.returnPress = 1;
                 memcpy(keypadMesg.message, keypadInput, 16);
                 while(!(xQueueSend(keypadMessageQueue, (void *) &keypadMesg, pdMS_TO_TICKS(KEYPAD_QUEUE_SEND_WAIT_MS))) == pdTRUE){}
-                String("").toCharArray(keypadInput,16);
+                // String("").toCharArray(keypadInput,16);
                 // xSemaphoreGive(keypadMessageMutex);
+                for(int kpindx = 0; kpindx < 16; kpindx++){
+                    keypadInput[kpindx] = 0;
+                }
                 continue;
             }
             // while(!(xSemaphoreTake( keypadMessageMutex, pdMS_TO_TICKS(KEYPAD_MESSAGE_MUTEX_WAIT_LOOP_MS) ) == pdTRUE)){}
