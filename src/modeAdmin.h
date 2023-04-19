@@ -13,7 +13,6 @@
 #include <relay.h>
 
 const String lcdTopTextAdmin = "-> Admin";
-// bool forceLCDPrint = 0;
 
 void modeAdminTask( void * pvParameters ){
     struct lcdMessageObject textLCD;
@@ -94,7 +93,6 @@ void modeAdminTask( void * pvParameters ){
                     if(!kpMesgRecv.returnPress){
                         if(currentSubMode == 0x05){
                             xQueueSend(keypadClearQueue, (void *) &keypadClearTRUE, ( TickType_t ) MODE_ADMIN_QUEUE_KEYPAD_CLEAR_SEND_WAIT_TICK );
-                            // resetKeypadQueue();
                             continue;
                         }
                         memcpy(textLCD.messagerow2, kpMesgRecv.message, 16);
@@ -222,7 +220,6 @@ void modeAdminTask( void * pvParameters ){
             while(!xQueueSend(lcdQueue,( void * ) &textLCD,( TickType_t ) MODE_ADMIN_LCD_QUEUE_SEND_WAIT_TICK ) == pdTRUE){}
             currentSubMode = 0x00;
             xQueueSend(keypadClearQueue, (void *) &keypadClearTRUE, ( TickType_t ) MODE_ADMIN_QUEUE_KEYPAD_CLEAR_SEND_WAIT_TICK );
-            // resetKeypadQueue();
             xQueueReset(rfidMessageQueue);
             xSemaphoreGive(modeTakeOverMutex);
         }

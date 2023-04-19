@@ -79,7 +79,6 @@ void modeNormalTask( void * pvParameters ){
                     lcdShow = false;
                     currentTick = 0;
                     xQueueSend(keypadClearQueue, (void *) &keypadClearTRUE, ( TickType_t ) MODE_NORMAL_QUEUE_KEYPAD_CLEAR_SEND_WAIT_TICK );
-                    // resetKeypadQueue();
                     if(authRFID(rfidMesgRecv.rfidTag)){
                         String("RFID - VALID").toCharArray(textLCD.messagerow2,16);
                         while(!xQueueSend(lcdQueue,( void * ) &textLCD,( TickType_t ) MODE_NORMAL_LCD_QUEUE_SEND_WAIT_TICK ) == pdTRUE){}
@@ -110,7 +109,6 @@ void modeNormalTask( void * pvParameters ){
                 else{
                     if(!lcdShow) continue;
                     xQueueSend(keypadClearQueue, (void *) &keypadClearTRUE, ( TickType_t ) MODE_NORMAL_QUEUE_KEYPAD_CLEAR_SEND_WAIT_TICK );
-                    // resetKeypadQueue();
                     textLCD.taskPersistState = false;
                     xQueueSend(lcdQueue,( void * ) &textLCD,( TickType_t ) MODE_NORMAL_LCD_QUEUE_SEND_WAIT_TICK );
                     lcdShow = false;
@@ -122,7 +120,6 @@ void modeNormalTask( void * pvParameters ){
             String(">Enter Admin..").toCharArray(textLCD.messagerow2,16);
             while(!xQueueSend(lcdQueue,( void * ) &textLCD,( TickType_t ) MODE_NORMAL_LCD_QUEUE_SEND_WAIT_TICK ) == pdTRUE){}
             xQueueSend(keypadClearQueue, (void *) &keypadClearTRUE, ( TickType_t ) MODE_NORMAL_QUEUE_KEYPAD_CLEAR_SEND_WAIT_TICK );
-            // resetKeypadQueue();
             xQueueReset(rfidMessageQueue);
             xSemaphoreGive(modeTakeOverMutex);
         }
