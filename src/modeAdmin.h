@@ -58,6 +58,12 @@ void modeAdminTask( void * pvParameters ){
                             lcdUpdateSignal = 1;
                             continue;
                         }
+                        if(xSemaphoreTake( buzzerMutex, pdMS_TO_TICKS(KEYPAD_BUZZER_MUTEX_WAIT_MS) ) == pdTRUE) {
+                            buzzerOn();
+                            vTaskDelay(pdMS_TO_TICKS(ADMIN_MODE_BUZZER_SUCCESS_ADD_DURATION_MS));
+                            buzzerOff();
+                            xSemaphoreGive(buzzerMutex);
+                        }
                         currentSubMode = 0x00;
                         String("RFID ADDED").toCharArray(textLCD.messagerow2,16);
                         lcdUpdateSignal = 1;
@@ -140,6 +146,12 @@ void modeAdminTask( void * pvParameters ){
                             String("PIN ADD FAILED").toCharArray(textLCD.messagerow2,16);
                             lcdUpdateSignal = 1;
                             continue;
+                        }
+                        if(xSemaphoreTake( buzzerMutex, pdMS_TO_TICKS(KEYPAD_BUZZER_MUTEX_WAIT_MS) ) == pdTRUE) {
+                            buzzerOn();
+                            vTaskDelay(pdMS_TO_TICKS(ADMIN_MODE_BUZZER_SUCCESS_ADD_DURATION_MS));
+                            buzzerOff();
+                            xSemaphoreGive(buzzerMutex);
                         }
                         currentSubMode = 0x00;
                         String("PIN ADDED").toCharArray(textLCD.messagerow2,16);
