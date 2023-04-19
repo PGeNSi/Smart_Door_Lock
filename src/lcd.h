@@ -5,6 +5,7 @@
 #include <LiquidCrystal_I2C.h>
 #include <sysConfig.h>
 #include <twowiresMutex.h>
+#include <rtc.h>
 
 struct lcdMessageObject {
     char messagerow1[17] = "";
@@ -69,11 +70,15 @@ void lcdTask( void * pvParameters ) {
         }
         if(!isSetPersist){
             while(!(xSemaphoreTake( twoWireMutex, pdMS_TO_TICKS(LCD_TWOWIRES_MUTEX_WAIT_LOOP_MS) ) == pdTRUE)){}
+            DateTime time = rtc.now();
+            String datestr, timestr;
+            datestr = time.timestamp(DateTime::TIMESTAMP_DATE);
+            timestr = time.timestamp(DateTime::TIMESTAMP_TIME);
             lcd.clear();
-            lcd.setCursor(0,0);
-            lcd.print("XXXXXXXXXXXXXXXX");
-            lcd.setCursor(0,1);
-            lcd.print("XXXXXXXXXXXXXXXX");
+            lcd.setCursor(3,0);
+            lcd.print(datestr);
+            lcd.setCursor(4,1);
+            lcd.print(timestr);
             xSemaphoreGive(twoWireMutex);
             vTaskDelay(pdMS_TO_TICKS(LCD_DEFAULT_MODE_TASK_DELAY_MS));
         }
