@@ -27,7 +27,7 @@ void rfidTask( void * pvParameters ){
     MFRC522::MIFARE_Key key;
     rfidMessage rfMesg;
     for(;;){
-        if(!rfidReadEnable) {
+        if(!rfidReadEnable || relayIsOn) {
             vTaskDelay(pdMS_TO_TICKS(RFID_WAIT_FOR_ENABLE_MS));
             continue;
         }
@@ -48,9 +48,11 @@ void rfidTask( void * pvParameters ){
                 rfid.PCD_StopCrypto1();
                 strID.toCharArray(rfMesg.rfidTag,11);
                 xQueueSend(rfidMessageQueue, (void *) &rfMesg, pdMS_TO_TICKS(RFID_QUEUE_SEND_WAIT_MS));
+                vTaskDelay(pdMS_TO_TICKS(RFID_LOOP_DELAY_CARD_READ_MS));
+                continue;
             }
         }
-        vTaskDelay(pdMS_TO_TICKS(RFID_LOOP_DELAY_MS));
+        vTaskDelay(pdMS_TO_TICKS(RFID_LOOP_DELAY_NO_CARD_MS));
     }
 }
 
