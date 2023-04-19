@@ -15,7 +15,10 @@ struct keypadMessage {
 };
 
 QueueHandle_t keypadMessageQueue;
-SemaphoreHandle_t keypadMessageMutex;
+QueueHandle_t keypadClearQueue;
+// SemaphoreHandle_t keypadMessageMutex;
+
+const bool keypadClearTRUE = 1;
 
 const byte ROWS = 4; // Row Count for keypad
 const byte COLS = 4; // Coulmn Count for keypad
@@ -36,37 +39,48 @@ Keypad_I2C keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS, KEYPAD_I2C_AD
 char keypadInput[16] = "";
 int keypadCurrentIndex = 0;
 
-void keypadMessageQueueMutexInit(){
-    Serial.println("--> Initializing Keypad Message Queue and Mutex Object");
+void keypadMessageQueueAndKeypadClearQueueInit(){
+    Serial.println("--> Initializing Keypad Message Queue and Keypad Clear Queue Object");
     keypadMessageQueue = xQueueCreate(KEYPAD_MESSAGE_QUEUE_LENGTH, sizeof( struct keypadMessage ));
-    keypadMessageMutex = xSemaphoreCreateMutex();
+    keypadClearQueue = xQueueCreate(KEYPAD_CLEAR_QUEUE_LENGTH, sizeof(bool));
+    // keypadMessageMutex = xSemaphoreCreateMutex();
     if(keypadMessageQueue == NULL){
         Serial.println("ERR--> Failed to Initialize Keypad Message Queue Object");
         ESP.restart();  
     }
-    if(keypadMessageMutex == NULL){
-        Serial.println("ERR--> Failed to Initialize Keypad Message Mutex Object");
-        ESP.restart();
+    if(keypadClearQueue == NULL){
+        Serial.println("ERR--> Failed to Initialize Keypad Clear Queue Object");
+        ESP.restart();  
     }
-    Serial.println("--> Keypad Message Queue and Mutex Object Initialized");
+    // if(keypadMessageMutex == NULL){
+    //     Serial.println("ERR--> Failed to Initialize Keypad Message Mutex Object");
+    //     ESP.restart();
+    // }
+    Serial.println("--> Keypad Message Queue and Keypad Clear Queue Object Initialized");
 }
 
-void resetKeypadQueue(){
-    while(!(xSemaphoreTake( keypadMessageMutex, ( TickType_t ) KEYPAD_MESSAGE_MUTEX_RESET_QUEUE_FUNCTION_WAIT_TICK ) == pdTRUE)){}
-    xQueueReset(keypadMessageQueue);
-    String("").toCharArray(keypadInput,16);
-    keypadCurrentIndex = 0;
-    xSemaphoreGive(keypadMessageMutex);
-}
+// void resetKeypadQueue(){
+//     while(!(xSemaphoreTake( keypadMessageMutex, ( TickType_t ) KEYPAD_MESSAGE_MUTEX_RESET_QUEUE_FUNCTION_WAIT_TICK ) == pdTRUE)){}
+//     xQueueReset(keypadMessageQueue);
+//     String("").toCharArray(keypadInput,16);
+//     keypadCurrentIndex = 0;
+//     xSemaphoreGive(keypadMessageMutex);
+// }
 
 void keypadTask( void * pvParameters ){
     while(!(xSemaphoreTake( twoWireMutex, pdMS_TO_TICKS(KEYPAD_TWOWIRES_MUTEX_WAIT_LOOP_MS) ) == pdTRUE)){}
     keypad.begin( makeKeymap(keys) );
     xSemaphoreGive(twoWireMutex);
+    bool queueResult;
     for (;;){
         if(!keypadReadEnable) {
             vTaskDelay(pdMS_TO_TICKS(KEYPAD_WAIT_FOR_ENABLE_MS));
             continue;
+        }
+        if( xQueueReceive( keypadClearQueue, &( queueResult ), ( TickType_t ) KEYPAD_CLEAR_QUEUE_WAIT_TICK ) == pdPASS ){
+            xQueueReset(keypadMessageQueue);
+            String("").toCharArray(keypadInput,16);
+            keypadCurrentIndex = 0;
         }
         while(!(xSemaphoreTake( twoWireMutex, pdMS_TO_TICKS(KEYPAD_TWOWIRES_MUTEX_WAIT_LOOP_MS) ) == pdTRUE)){}
         char key = keypad.getKey(); 
@@ -82,30 +96,30 @@ void keypadTask( void * pvParameters ){
             struct keypadMessage keypadMesg;
             if(key == '*'){
                 if(keypadCurrentIndex == 0) continue;
-                while(!(xSemaphoreTake( keypadMessageMutex, pdMS_TO_TICKS(KEYPAD_MESSAGE_MUTEX_WAIT_LOOP_MS) ) == pdTRUE)){}
+                // while(!(xSemaphoreTake( keypadMessageMutex, pdMS_TO_TICKS(KEYPAD_MESSAGE_MUTEX_WAIT_LOOP_MS) ) == pdTRUE)){}
                 keypadCurrentIndex--;
                 keypadInput[keypadCurrentIndex] = 0;
                 memcpy(keypadMesg.message, keypadInput, 16);
                 xQueueSend(keypadMessageQueue, (void *) &keypadMesg, pdMS_TO_TICKS(KEYPAD_QUEUE_SEND_WAIT_MS));
-                xSemaphoreGive(keypadMessageMutex);
+                // xSemaphoreGive(keypadMessageMutex);
                 continue;
             }
             if(key == '#'){
-                while(!(xSemaphoreTake( keypadMessageMutex, pdMS_TO_TICKS(KEYPAD_MESSAGE_MUTEX_WAIT_LOOP_MS) ) == pdTRUE)){}
+                // while(!(xSemaphoreTake( keypadMessageMutex, pdMS_TO_TICKS(KEYPAD_MESSAGE_MUTEX_WAIT_LOOP_MS) ) == pdTRUE)){}
                 keypadCurrentIndex = 0;
                 keypadMesg.returnPress = 1;
                 memcpy(keypadMesg.message, keypadInput, 16);
                 while(!(xQueueSend(keypadMessageQueue, (void *) &keypadMesg, pdMS_TO_TICKS(KEYPAD_QUEUE_SEND_WAIT_MS))) == pdTRUE){}
                 String("").toCharArray(keypadInput,16);
-                xSemaphoreGive(keypadMessageMutex);
+                // xSemaphoreGive(keypadMessageMutex);
                 continue;
             }
-            while(!(xSemaphoreTake( keypadMessageMutex, pdMS_TO_TICKS(KEYPAD_MESSAGE_MUTEX_WAIT_LOOP_MS) ) == pdTRUE)){}
+            // while(!(xSemaphoreTake( keypadMessageMutex, pdMS_TO_TICKS(KEYPAD_MESSAGE_MUTEX_WAIT_LOOP_MS) ) == pdTRUE)){}
             keypadInput[keypadCurrentIndex] = key;
             keypadCurrentIndex++;
             memcpy(keypadMesg.message, keypadInput, 16);
             xQueueSend(keypadMessageQueue, (void *) &keypadMesg, pdMS_TO_TICKS(KEYPAD_QUEUE_SEND_WAIT_MS));
-            xSemaphoreGive(keypadMessageMutex);
+            // xSemaphoreGive(keypadMessageMutex);
             continue;
         }
         vTaskDelay(pdMS_TO_TICKS(KEYPAD_LOOP_DELAY_MS));

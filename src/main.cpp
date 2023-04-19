@@ -32,7 +32,7 @@ void setup(){
     rtcInit();
     buzzerInit();
     lcdQueueInit();
-    keypadMessageQueueMutexInit();
+    keypadMessageQueueAndKeypadClearQueueInit();
     rfidMessageQueueInit();
     relayInit();
     Serial.println("> All System Initialized");

@@ -64,7 +64,7 @@ void modeAdminTask( void * pvParameters ){
                         continue;
                     }
                     if(authRFID(rfidMesgRecv.rfidTag)){
-                        xQueueSend(relayQueue, (void *) &relayTRUE, ( TickType_t ) MODE_NORMAL_QUEUE_RELAY_SEND_WAIT_TICK );
+                        xQueueSend(relayQueue, (void *) &relayTRUE, ( TickType_t ) MODE_ADMIN_QUEUE_RELAY_SEND_WAIT_TICK );
                         if(xSemaphoreTake( buzzerMutex, pdMS_TO_TICKS(KEYPAD_BUZZER_MUTEX_WAIT_MS) ) == pdTRUE) {
                             buzzerOn();
                             vTaskDelay(pdMS_TO_TICKS(BUZZER_UNLOCK_SOUND_DURATION_MS));
@@ -87,7 +87,8 @@ void modeAdminTask( void * pvParameters ){
                 if( xQueueReceive( keypadMessageQueue, &( kpMesgRecv ), ( TickType_t ) MODE_ADMIN_KEYPAD_QUEUE_RECEIVE_WAIT_TICK ) == pdPASS ) {
                     if(!kpMesgRecv.returnPress){
                         if(currentSubMode == 0x05){
-                            resetKeypadQueue();
+                            xQueueSend(keypadClearQueue, (void *) &keypadClearTRUE, ( TickType_t ) MODE_ADMIN_QUEUE_KEYPAD_CLEAR_SEND_WAIT_TICK );
+                            // resetKeypadQueue();
                             continue;
                         }
                         memcpy(textLCD.messagerow2, kpMesgRecv.message, 16);
@@ -208,7 +209,8 @@ void modeAdminTask( void * pvParameters ){
             String(">Exit Admin..").toCharArray(textLCD.messagerow2,16);
             while(!xQueueSend(lcdQueue,( void * ) &textLCD,( TickType_t ) MODE_ADMIN_LCD_QUEUE_SEND_WAIT_TICK ) == pdTRUE){}
             currentSubMode = 0x00;
-            resetKeypadQueue();
+            xQueueSend(keypadClearQueue, (void *) &keypadClearTRUE, ( TickType_t ) MODE_ADMIN_QUEUE_KEYPAD_CLEAR_SEND_WAIT_TICK );
+            // resetKeypadQueue();
             xQueueReset(rfidMessageQueue);
             xSemaphoreGive(modeTakeOverMutex);
         }
