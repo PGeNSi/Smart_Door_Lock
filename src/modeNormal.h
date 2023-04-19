@@ -119,6 +119,7 @@ void modeNormalTask( void * pvParameters ){
             xQueueReset(rfidMessageQueue);
             xSemaphoreGive(modeTakeOverMutex);
         }
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
 }
 

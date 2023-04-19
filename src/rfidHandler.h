@@ -48,6 +48,7 @@ void rfidTask( void * pvParameters ){
                 xQueueSend(rfidMessageQueue, (void *) &rfMesg, pdMS_TO_TICKS(RFID_QUEUE_SEND_WAIT_MS));
             }
         }
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
 }
 

@@ -23,11 +23,13 @@ void lcdQueueInit(){
 }
 
 void lcdTask( void * pvParameters ) {
+    while(!(xSemaphoreTake( twoWireMutex, pdMS_TO_TICKS(LCD_TWOWIRES_MUTEX_WAIT_LOOP_MS) ) == pdTRUE)){}
     lcd.begin();
     lcd.backlight(); 
     lcd.clear();
+    xSemaphoreGive(twoWireMutex);
     struct lcdMessageObject receivedMessage;
-    bool isSetPersist = false;
+    bool isSetPersist = 0;
     uint8_t persistID = 0x0;
 
     for( ;; ) {
@@ -41,7 +43,7 @@ void lcdTask( void * pvParameters ) {
             lcd.clear();
             lcd.setCursor(0,0);
             lcd.print(row1);
-            lcd.setCursor(1,0);
+            lcd.setCursor(0,1);
             lcd.print(row2);
             xSemaphoreGive(twoWireMutex);
             if(isSetPersist){
@@ -70,7 +72,7 @@ void lcdTask( void * pvParameters ) {
             lcd.clear();
             lcd.setCursor(0,0);
             lcd.print("XXXXXXXXXXXXXXXX");
-            lcd.setCursor(1,0);
+            lcd.setCursor(0,1);
             lcd.print("XXXXXXXXXXXXXXXX");
             xSemaphoreGive(twoWireMutex);
             vTaskDelay(pdMS_TO_TICKS(LCD_DEFAULT_MODE_TASK_DELAY_MS));

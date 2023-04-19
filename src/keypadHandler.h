@@ -60,7 +60,9 @@ void resetKeypadQueue(){
 }
 
 void keypadTask( void * pvParameters ){
+    while(!(xSemaphoreTake( twoWireMutex, pdMS_TO_TICKS(KEYPAD_TWOWIRES_MUTEX_WAIT_LOOP_MS) ) == pdTRUE)){}
     keypad.begin( makeKeymap(keys) );
+    xSemaphoreGive(twoWireMutex);
     for (;;){
         while(!(xSemaphoreTake( keypadMessageMutex, pdMS_TO_TICKS(KEYPAD_MESSAGE_MUTEX_WAIT_LOOP_MS) ) == pdTRUE)){}
         if(!keypadReadEnable) continue;
