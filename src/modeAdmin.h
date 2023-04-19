@@ -42,7 +42,7 @@ void modeAdminTask( void * pvParameters ){
             while(adminMode){
                 vTaskDelay(pdMS_TO_TICKS(MODE_ADMIN_INTERNAL_LOOP_DELAY_MS));
                 if(lcdUpdateSignal){
-                    String finalizedLCDTopText = "-> Admin 0x";
+                    String finalizedLCDTopText = "-> Admin 0x0";
                     finalizedLCDTopText.concat(String(currentSubMode,HEX));
                     finalizedLCDTopText.toCharArray(textLCD.messagerow1, 16);
                     xQueueSend(lcdQueue,( void * ) &textLCD,( TickType_t ) MODE_ADMIN_LCD_QUEUE_SEND_WAIT_TICK );
