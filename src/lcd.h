@@ -19,7 +19,7 @@ QueueHandle_t lcdQueue;
 LiquidCrystal_I2C lcd(LCD_I2C_ADDR, 16, 2);
 
 void lcdQueueInit(){
-    lcdQueue = xQueueCreate(10, sizeof( struct lcdMessageObject ));
+    lcdQueue = xQueueCreate(LCD_MESSAGE_QUEUE_LENGTH, sizeof( struct lcdMessageObject ));
 }
 
 void lcdTask( void * pvParameters ) {
@@ -37,7 +37,7 @@ void lcdTask( void * pvParameters ) {
             if(isSetPersist && !(receivedMessage.taskPersistID == persistID)) continue;
             String row1 = receivedMessage.messagerow1;
             if(row1.length() > 16) row1.remove(16, row1.length()-16);
-            String row2 = receivedMessage.messagerow1;
+            String row2 = receivedMessage.messagerow2;
             if(row2.length() > 16) row2.remove(16, row2.length()-16);
             while(!(xSemaphoreTake( twoWireMutex, pdMS_TO_TICKS(LCD_TWOWIRES_MUTEX_WAIT_LOOP_MS) ) == pdTRUE)){}
             lcd.clear();

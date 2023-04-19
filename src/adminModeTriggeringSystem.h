@@ -13,7 +13,10 @@ void adminModeTriggeringSystemTask( void * pvParameters ){
     for(;;){
         while(doorUnlockedButtonPressed){
             if(currentAMTTick <= 0) {
-                if(!buttonReleased) continue;
+                if(!buttonReleased) {
+                    vTaskDelay(pdMS_TO_TICKS(ADMIN_MODE_TRIGGERER_BUTTON_RELEASE_LOOP_DELAY_MS));
+                    continue;
+                }
                 adminMode = !adminMode;
                 buttonReleased = 0;
                 continue;

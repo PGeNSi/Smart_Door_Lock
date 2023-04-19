@@ -29,6 +29,7 @@ void modeAdminTask( void * pvParameters ){
     textLCD.taskPersistID = 0xa0;
     textLCD.taskPersistState = false;
     textLCD.duration = MODE_ADMIN_LCD_NON_PERSIST_DEFAULT_DURATION_MS;
+    bool lcdUpdateSignal = 0;
     for(;;){
         if(adminMode){
             while(!(xSemaphoreTake( modeTakeOverMutex, pdMS_TO_TICKS(MODE_ADMIN_MODETAKEOVER_MUTEX_WAIT_LOOP_MS) ) == pdTRUE)){}
@@ -37,11 +38,16 @@ void modeAdminTask( void * pvParameters ){
             textLCD.taskPersistState = true;
             String("INPUT MODE NUM").toCharArray(textLCD.messagerow2,16);
             int selectedIndex = 0;
+            lcdUpdateSignal = 1;
             while(adminMode){
-                String finalizedLCDTopText = "-> Admin 0x";
-                finalizedLCDTopText.concat(String(currentSubMode,HEX));
-                finalizedLCDTopText.toCharArray(textLCD.messagerow1, 16);
-                xQueueSend(lcdQueue,( void * ) &textLCD,( TickType_t ) MODE_ADMIN_LCD_QUEUE_SEND_WAIT_TICK );
+                vTaskDelay(pdMS_TO_TICKS(MODE_ADMIN_INTERNAL_LOOP_DELAY_MS));
+                if(lcdUpdateSignal){
+                    String finalizedLCDTopText = "-> Admin 0x";
+                    finalizedLCDTopText.concat(String(currentSubMode,HEX));
+                    finalizedLCDTopText.toCharArray(textLCD.messagerow1, 16);
+                    xQueueSend(lcdQueue,( void * ) &textLCD,( TickType_t ) MODE_ADMIN_LCD_QUEUE_SEND_WAIT_TICK );
+                    lcdUpdateSignal = 0;
+                }
                 struct keypadMessage kpMesgRecv;
                 struct rfidMessage rfidMesgRecv;
                 if( xQueueReceive( rfidMessageQueue, &( rfidMesgRecv ), ( TickType_t ) MODE_ADMIN_RFID_QUEUE_RECEIVE_WAIT_TICK ) == pdPASS ) {
@@ -49,10 +55,12 @@ void modeAdminTask( void * pvParameters ){
                         if(!addRFIDToSlot(selectedIndex,rfidMesgRecv.rfidTag)){
                             currentSubMode = 0x00;
                             String("RFID ADD FAILED").toCharArray(textLCD.messagerow2,16);
+                            lcdUpdateSignal = 1;
                             continue;
                         }
                         currentSubMode = 0x00;
                         String("RFID ADDED").toCharArray(textLCD.messagerow2,16);
+                        lcdUpdateSignal = 1;
                         continue;
                     }
                     if(authRFID(rfidMesgRecv.rfidTag)){
@@ -70,6 +78,7 @@ void modeAdminTask( void * pvParameters ){
                             buzzerOn();
                             vTaskDelay(pdMS_TO_TICKS(BUZZER_UNLOCK_FAILED_SOUND_DURATION_MS));
                             buzzerOff();
+                            vTaskDelay(pdMS_TO_TICKS(BUZZER_UNLOCK_FAILED_SOUND_DURATION_MS));
                         }
                         xSemaphoreGive(buzzerMutex);
                     }
@@ -82,11 +91,13 @@ void modeAdminTask( void * pvParameters ){
                             continue;
                         }
                         memcpy(textLCD.messagerow2, kpMesgRecv.message, 16);
+                        lcdUpdateSignal = 1;
                         continue;
                     }
                     if((String(kpMesgRecv.message) == "") && (currentSubMode != 0x00)){
                         currentSubMode = 0x00;
                         String("").toCharArray(textLCD.messagerow2,16);
+                        lcdUpdateSignal = 1;
                         continue;
                     }
                     if(currentSubMode == 0x00){
@@ -94,38 +105,44 @@ void modeAdminTask( void * pvParameters ){
                         if(String(kpMesgRecv.message) == "A1"){
                             currentSubMode = 0x01;
                             String("INPUT INDEX").toCharArray(textLCD.messagerow2,16);
+                            lcdUpdateSignal = 1;
                             continue;
                         }
                         // Add RFID
                         if(String(kpMesgRecv.message) == "A2"){
                             currentSubMode = 0x04;
                             String("INPUT INDEX").toCharArray(textLCD.messagerow2,16);
+                            lcdUpdateSignal = 1;
                             continue;
                         }
                         // Delete Password/PIN
                         if(String(kpMesgRecv.message) == "D1"){
                             currentSubMode = 0x03;
                             String("INPUT INDEX").toCharArray(textLCD.messagerow2,16);
+                            lcdUpdateSignal = 1;
                             continue;
                         }
                         // Delete RFID
                         if(String(kpMesgRecv.message) == "D2"){
                             currentSubMode = 0x06;
                             String("INPUT INDEX").toCharArray(textLCD.messagerow2,16);
+                            lcdUpdateSignal = 1;
                             continue;
                         }
                         String("INVALID INPUT").toCharArray(textLCD.messagerow2,16);
-                        xQueueSend(lcdQueue,( void * ) &textLCD,( TickType_t ) MODE_ADMIN_LCD_QUEUE_SEND_WAIT_TICK );
+                        lcdUpdateSignal = 1;
                         continue;
                     }
                     if(currentSubMode == 0x02){
                         if(!addPasswdToSlot(selectedIndex,kpMesgRecv.message)){
                             currentSubMode = 0x00;
                             String("PIN ADD FAILED").toCharArray(textLCD.messagerow2,16);
+                            lcdUpdateSignal = 1;
                             continue;
                         }
                         currentSubMode = 0x00;
                         String("PIN ADDED").toCharArray(textLCD.messagerow2,16);
+                        lcdUpdateSignal = 1;
                         continue;
                     }
                     if(currentSubMode == 0x01 || currentSubMode == 0x04 || currentSubMode == 0x03 || currentSubMode == 0x06){
@@ -134,6 +151,7 @@ void modeAdminTask( void * pvParameters ){
                         if(kpInputIndex < 1 || kpInputIndex > 10){
                             currentSubMode = 0x00;
                             String("INVALID INDEX").toCharArray(textLCD.messagerow2,16);
+                            lcdUpdateSignal = 1;
                             continue;
                         }
                         selectedIndex = kpInputIndex - 1;
@@ -142,10 +160,12 @@ void modeAdminTask( void * pvParameters ){
                             if(isPasswdSlotAssigned(selectedIndex)){
                                 currentSubMode = 0x00;
                                 String("INDEX OCCUPIED").toCharArray(textLCD.messagerow2,16);
+                                lcdUpdateSignal = 1;
                                 continue;
                             }
                             currentSubMode = 0x02;
                             String("INPUT PIN").toCharArray(textLCD.messagerow2,16);
+                            lcdUpdateSignal = 1;
                             continue;
                         }
                         // Add RFID
@@ -153,10 +173,13 @@ void modeAdminTask( void * pvParameters ){
                             if(isRFIDSlotAssigned(selectedIndex)){
                                 currentSubMode = 0x00;
                                 String("INDEX OCCUPIED").toCharArray(textLCD.messagerow2,16);
+                                lcdUpdateSignal = 1;
                                 continue;
                             }
                             currentSubMode = 0x05;
+                            xQueueReset(rfidMessageQueue);
                             String("SCAN RFID").toCharArray(textLCD.messagerow2,16);
+                            lcdUpdateSignal = 1;
                             continue;
                         }
                         // Delete Password/PIN
@@ -164,6 +187,7 @@ void modeAdminTask( void * pvParameters ){
                             currentSubMode = 0x00;
                             clearPasswdSlot(selectedIndex);
                             String("PIN CLEARED").toCharArray(textLCD.messagerow2,16);
+                            lcdUpdateSignal = 1;
                             continue;
                         }
                         // Delete RFID
@@ -171,6 +195,7 @@ void modeAdminTask( void * pvParameters ){
                             currentSubMode = 0x00;
                             clearRFIDSlot(selectedIndex);
                             String("RFID CLEARED").toCharArray(textLCD.messagerow2,16);
+                            lcdUpdateSignal = 1;
                             continue;
                         }
                     }
@@ -187,7 +212,7 @@ void modeAdminTask( void * pvParameters ){
             xQueueReset(rfidMessageQueue);
             xSemaphoreGive(modeTakeOverMutex);
         }
-        vTaskDelay(pdMS_TO_TICKS(10));
+        vTaskDelay(pdMS_TO_TICKS(MODE_ADMIN_WAIT_FOR_MODE_UPDATE_MS));
     }
 }
 

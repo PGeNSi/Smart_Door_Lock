@@ -31,6 +31,7 @@ void modeNormalTask( void * pvParameters ){
             rfidReadEnable = 1;
             String("").toCharArray(textLCD.messagerow2,16);
             while(!adminMode){
+                vTaskDelay(pdMS_TO_TICKS(MODE_NORMAL_INTERNAL_LOOP_DELAY_MS));
                 String("").toCharArray(textLCD.messagerow2,16);
                 struct keypadMessage kpMesgRecv;
                 if( xQueueReceive( keypadMessageQueue, &( kpMesgRecv ), ( TickType_t ) MODE_NORMAL_KEYPAD_QUEUE_RECEIVE_WAIT_TICK ) == pdPASS ) {
@@ -65,6 +66,7 @@ void modeNormalTask( void * pvParameters ){
                             buzzerOn();
                             vTaskDelay(pdMS_TO_TICKS(BUZZER_UNLOCK_FAILED_SOUND_DURATION_MS));
                             buzzerOff();
+                            vTaskDelay(pdMS_TO_TICKS(BUZZER_UNLOCK_FAILED_SOUND_DURATION_MS));
                         }
                         xSemaphoreGive(buzzerMutex);
                     }
@@ -95,6 +97,7 @@ void modeNormalTask( void * pvParameters ){
                             buzzerOn();
                             vTaskDelay(pdMS_TO_TICKS(BUZZER_UNLOCK_FAILED_SOUND_DURATION_MS));
                             buzzerOff();
+                            vTaskDelay(pdMS_TO_TICKS(BUZZER_UNLOCK_FAILED_SOUND_DURATION_MS));
                         }
                         xSemaphoreGive(buzzerMutex);
                     }
@@ -119,7 +122,7 @@ void modeNormalTask( void * pvParameters ){
             xQueueReset(rfidMessageQueue);
             xSemaphoreGive(modeTakeOverMutex);
         }
-        vTaskDelay(pdMS_TO_TICKS(10));
+        vTaskDelay(pdMS_TO_TICKS(MODE_NORMAL_WAIT_FOR_MODE_UPDATE_MS));
     }
 }
 

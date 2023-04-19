@@ -15,7 +15,7 @@ bool relayIsOn = false;
 void relayInit(){
     Serial.println("--> Initializing Relay pin and Queue Object");
     pinMode(RELAY_PIN, OUTPUT);
-    relayQueue = xQueueCreate(10, sizeof(bool));
+    relayQueue = xQueueCreate(RELAY_QUEUE_LENGTH, sizeof(bool));
     if(relayQueue == NULL){
         Serial.println("ERR--> Failed to Initialize Relay Queue Object");
         ESP.restart();
@@ -30,7 +30,10 @@ void relayTask( void * pvParameters ){
             currentRelayTick = maxRelayTick;
         }
         if(currentRelayTick<=0){
-            if(!relayIsOn) continue;
+            if(!relayIsOn) {
+                vTaskDelay(pdMS_TO_TICKS(RELAY_WAIT_FOR_QUEUE_DELAY_MS));
+                continue;
+            }
             digitalWrite(RELAY_PIN,0);
             relayIsOn = false;
             continue;

@@ -17,7 +17,7 @@ MFRC522::MIFARE_Key key;
 
 void rfidMessageQueueInit(){
     Serial.println("--> Initializing RFID Message Queue Object");
-    rfidMessageQueue = xQueueCreate(2, sizeof( struct rfidMessage ));
+    rfidMessageQueue = xQueueCreate(RFID_MESSAGE_QUEUE_LENGTH, sizeof( struct rfidMessage ));
     if(rfidMessageQueue == NULL){
         Serial.println("ERR--> Failed to Initialize RFID Message Queue Object");
         ESP.restart();
@@ -29,7 +29,10 @@ void rfidTask( void * pvParameters ){
     rfidMessage rfMesg;
     rfid.PCD_Init();
     for(;;){
-        if(!rfidReadEnable) continue;
+        if(!rfidReadEnable) {
+            vTaskDelay(pdMS_TO_TICKS(RFID_WAIT_FOR_ENABLE_MS));
+            continue;
+        }
         if (rfid.PICC_IsNewCardPresent() && rfid.PICC_ReadCardSerial()) {
             MFRC522::PICC_Type piccType = rfid.PICC_GetType(rfid.uid.sak);
             if (piccType == MFRC522::PICC_TYPE_MIFARE_MINI ||
@@ -48,7 +51,7 @@ void rfidTask( void * pvParameters ){
                 xQueueSend(rfidMessageQueue, (void *) &rfMesg, pdMS_TO_TICKS(RFID_QUEUE_SEND_WAIT_MS));
             }
         }
-        vTaskDelay(pdMS_TO_TICKS(10));
+        vTaskDelay(pdMS_TO_TICKS(RFID_LOOP_DELAY_MS));
     }
 }
 
