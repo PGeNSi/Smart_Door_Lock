@@ -13,7 +13,7 @@ void wifiInit(){
     }
     bool res = wm.autoConnect(WIFI_MANAGER_SSID, WIFI_MANAGER_PASSWD);
     if (!res) {
-        Serial.println("---->WiFi Connected");
+        Serial.println("ERR---->WiFi Not Connected");
         ESP.restart();
     }
     else {
