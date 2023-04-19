@@ -12,9 +12,6 @@ struct rfidMessage {
 
 QueueHandle_t rfidMessageQueue;
 
-MFRC522 rfid(RFID_SS_SDA_PIN, RFID_RST_PIN); 
-MFRC522::MIFARE_Key key;
-
 void rfidMessageQueueInit(){
     Serial.println("--> Initializing RFID Message Queue Object");
     rfidMessageQueue = xQueueCreate(RFID_MESSAGE_QUEUE_LENGTH, sizeof( struct rfidMessage ));
@@ -26,13 +23,15 @@ void rfidMessageQueueInit(){
 }
 
 void rfidTask( void * pvParameters ){
+    MFRC522 rfid(RFID_SS_SDA_PIN, RFID_RST_PIN); 
+    MFRC522::MIFARE_Key key;
     rfidMessage rfMesg;
-    rfid.PCD_Init();
     for(;;){
         if(!rfidReadEnable) {
             vTaskDelay(pdMS_TO_TICKS(RFID_WAIT_FOR_ENABLE_MS));
             continue;
         }
+        rfid.PCD_Init();
         if (rfid.PICC_IsNewCardPresent() && rfid.PICC_ReadCardSerial()) {
             MFRC522::PICC_Type piccType = rfid.PICC_GetType(rfid.uid.sak);
             if (piccType == MFRC522::PICC_TYPE_MIFARE_MINI ||
